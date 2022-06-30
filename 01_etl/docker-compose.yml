@@ -1,0 +1,67 @@
+version: '3.8'
+services:
+
+  backend:
+    build: ./app
+    container_name: backend
+    env_file: 
+      - .env
+    volumes:
+      - ./app:/opt/app
+      - ./static:/var/www/static:ro
+    ports:
+      - 8000:8000
+    networks:
+      - etube
+
+  db:
+    image: postgres:13
+    container_name: db
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    networks:
+      - etube
+    ports:
+      - 5432:5432
+    restart: unless-stopped
+    volumes:
+      - etube-postgres-data:/var/lib/postgresql/data
+    # helthcheck will run at startup backend 
+    healthcheck:
+      test: pg_isready -U ${DB_USER} -D ${DB_NAME} > /dev/null; if [[ $$? == 0 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  elasticsearch:
+    image: docker.io/elastic/elasticsearch:8.2.0
+    container_name: elasticsearch
+    env_file: .env
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_USERNAME=${ES_USER}
+      - ELASTIC_PASSWORD=${ES_PASSWORD}
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    networks:
+      - etube
+    volumes:
+      - etube-elasticsearch-data:/usr/share/elasticsearch/data:rw
+    # helthcheck will run at startup backend 
+    healthcheck:
+      test: curl http://elasticsearch:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+networks:
+  etube:
+    driver: bridge
+  
+volumes:
+  etube-postgres-data:
+  etube-elasticsearch-data:
