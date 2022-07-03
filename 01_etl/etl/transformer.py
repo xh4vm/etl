@@ -1,14 +1,19 @@
-from typing import Any, Iterator
-from pydantic import BaseModel
+from typing import Any, Iterator, Optional, Union
 
-from .extractor import Extractor
+from schema import FilmWorkModelIntoES
 
 
 class Transformer:
 
-    def __init__(self, extractor : Extractor):
-        self.extractor = extractor
+    def _get_short_persons(self, persons : Optional[list[dict[str, Any]]]) -> Union[Iterator[str], tuple]:
+        return (person['name'] for person in persons) if persons is not None else ()
 
-    def transform_some_data(self, schema : BaseModel, data : list[tuple[Any]]) -> Iterator[BaseModel]:
-        for row in data:
-            yield schema(*row)
+    def transform(self, raw_data : Iterator[tuple[Any]]) -> Iterator[FilmWorkModelIntoES]:
+        for row in raw_data:
+            directors_names = self._get_short_persons(row['directors'])
+
+            yield FilmWorkModelIntoES(id=row['id'], title=row['title'], description=row['description'], 
+                imdb_rating=row['rating'], genre=row['genres'],
+                director=', '.join(directors_names), actors_names=self._get_short_persons(row['actors']),
+                writers_names=self._get_short_persons(row['writers']), actors=row['actors'],
+                writers=row['writers']), str(row['updated_at'])

@@ -1,27 +1,70 @@
+import logging
 from typing import Any, Iterator, Optional
-from pydantic import BaseModel
+import backoff
+import psycopg2
 from psycopg2.extras import DictCursor
+from psycopg2.extensions import connection
+from datetime import datetime
 
-from .state import BaseState
+from state import BaseState
+from schema import SCHEMA, Schema
+from schema import PersonFilmWorkRoleEnum
+from config import BACKOFF_CONFIG, PostgreSQLSettings
 
 
-class Extractor:
-
-    def __init__(self, cursor : DictCursor, state : BaseState, chunk_size : int = 100):
-        self.cursor : DictCursor = cursor
-        self.state : BaseState = state
-        self.chunk_size : int = chunk_size
-
-    def get_some_raw_data(self, schema : BaseModel, fields : set = None, where_statement : Optional[str] = None, in_statement : Optional[list[str]] = None) -> list[tuple[Any]]:
-        where = f'WHERE {where_statement} IN {in_statement}'\
-            if where_statement is not None and in_statement is not None \
-            else '1 = 1'
+class PostgreSQLExtractor:
+    logger = logging.getLogger(__name__)
+    
+    def __init__(self, dsn : PostgreSQLSettings, state : BaseState, pg_conn : Optional[connection] = None, chunk_size : int = 100):
+        self._pg_conn = pg_conn
+        self._dsn = dsn
+        self._state = state
+        self.chunk_size = chunk_size
         
-        fields = schema.__fields_set__ if fields is None else fields
-        query : str = (
-            f'SELECT {", ".join(fields)} FROM {schema._meta.model}'
-            f'{where}'
+
+    @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
+    def _reconnection(self) -> connection:
+        if self._pg_conn is not None:
+            self._pg_conn.close()
+
+        return psycopg2.connect(**self._dsn.dict(), cursor_factory=DictCursor)
+
+    @property
+    def pg_conn(self) -> connection:
+        if self._pg_conn is None or self._pg_conn.closed:
+            self._pg_conn = self._reconnection()
+
+        return self._pg_conn
+
+    @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
+    def get_raw_data(self) -> Iterator[tuple[Any]]:
+        down_limit = self._state.get(f'down_limit_{Schema.film_work}', default_value=str(datetime.min))
+        self.logger.debug(r'state setted in ' + down_limit)
+
+        cursor = self.pg_conn.cursor()
+        cursor.itersize = self.chunk_size
+
+        query = (
+            f'SELECT fw.id, fw.title, fw.description, fw.rating, fw.creation_date, fw.type, ' 
+            f'fw.created_at, GREATEST(fw.updated_at, MAX(p.updated_at), MAX(g.updated_at)) as updated_at, '
+            f'COALESCE(ARRAY_AGG(DISTINCT jsonb_build_object(\'id\', p.id, \'name\', p.full_name)) '
+                f'FILTER (WHERE pfw.role = \'{PersonFilmWorkRoleEnum.DIRECTOR}\'),'+' \'{}\') AS directors, '
+            f'COALESCE(ARRAY_AGG(DISTINCT jsonb_build_object(\'id\', p.id, \'name\', p.full_name)) '
+                f'FILTER (WHERE pfw.role = \'{PersonFilmWorkRoleEnum.ACTOR}\'),'+' \'{}\') AS actors, '
+            f'COALESCE(ARRAY_AGG(DISTINCT jsonb_build_object(\'id\', p.id, \'name\', p.full_name)) '
+                f'FILTER (WHERE pfw.role = \'{PersonFilmWorkRoleEnum.WRITER}\'),'+' \'{}\') AS writers, '
+            f'ARRAY_AGG(DISTINCT g.name) as genres FROM {SCHEMA}.{Schema.film_work} fw '
+            f'LEFT JOIN {SCHEMA}.{Schema.person_film_work} AS pfw ON pfw.film_work_id = fw.id '
+            f'LEFT JOIN {SCHEMA}.{Schema.person} AS p ON p.id = pfw.person_id '
+            f'LEFT JOIN {SCHEMA}.{Schema.genre_film_work} AS gfw ON gfw.film_work_id = fw.id '
+            f'LEFT JOIN {SCHEMA}.{Schema.genre} AS g ON g.id = gfw.genre_id '
+            f'WHERE GREATEST(fw.updated_at, p.updated_at, g.updated_at) > \'{down_limit}\' '
+            f'GROUP BY fw.id '
+            f'ORDER BY GREATEST(fw.updated_at, MAX(p.updated_at), MAX(g.updated_at));'
         )
-        self.cursor.execute(query)
-        
-        return self.cursor.fetchmany(size=self.chunk_size)
+        cursor.execute(query)
+
+        for row in cursor:
+            yield row
+
+        cursor.close()

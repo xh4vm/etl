@@ -4,7 +4,7 @@ WORKDIR /opt/app
 EXPOSE 8000
 ENTRYPOINT ["uwsgi", "--strict", "--ini", "uwsgi.ini"]
 
-COPY run_uwsgi.sh requirements.txt uwsgi.ini ./
+COPY requirements.txt uwsgi.ini ./
 
 RUN  mkdir -p /var/www/static/ \
      && pip install --upgrade pip \

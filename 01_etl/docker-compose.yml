@@ -25,13 +25,28 @@ services:
     networks:
       - etube
     ports:
-      - 5432:5432
+      - ${DB_PORT}:5432
     restart: unless-stopped
     volumes:
       - etube-postgres-data:/var/lib/postgresql/data
-    # helthcheck will run at startup backend 
     healthcheck:
       test: pg_isready -U ${DB_USER} -D ${DB_NAME} > /dev/null; if [[ $$? == 0 ]]; then echo 0; else echo 1; fi
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: redis
+    restart: unless-stopped
+    volumes:
+      - etube-redis-data:/data
+    networks:
+      - etube
+    ports:
+      - ${REDIS_PORT}:6379
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -41,9 +56,10 @@ services:
     container_name: elasticsearch
     env_file: .env
     ports:
-      - 9200:9200
+      - ${ES_PORT}:9200
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
       - ELASTIC_USERNAME=${ES_USER}
       - ELASTIC_PASSWORD=${ES_PASSWORD}
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
@@ -51,12 +67,27 @@ services:
       - etube
     volumes:
       - etube-elasticsearch-data:/usr/share/elasticsearch/data:rw
-    # helthcheck will run at startup backend 
+      - ./elasticsearch/:/usr/share/elasticsearch/mapping/:rw
     healthcheck:
       test: curl http://elasticsearch:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
       timeout: 10s
       retries: 5
+    
+  etl:
+    build: ./etl
+    restart: unless-stopped
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - etube
+    env_file:
+      - ./etl/.env
 
 networks:
   etube:
@@ -65,3 +96,4 @@ networks:
 volumes:
   etube-postgres-data:
   etube-elasticsearch-data:
+  etube-redis-data:
