@@ -27,12 +27,17 @@ class ElasticsearchSettings(BaseSettings):
     port : int = Field(..., env='ES_PORT')
 
 
+class ESIndex(BaseSettings):
+    movies : str = Field(..., env='INDEX_MOVIES')
+
+
 POSTGRES_DSN = PostgreSQLSettings()
 REDIS_CONFIG = RedisSettings()
 ELASTIC_CONFIG = ElasticsearchSettings()
+ES_INDEX = ESIndex()
 
 BACKOFF_CONFIG = {
     "wait_gen": backoff.expo,
     "exception": Exception,
-    # "max_tries": APP_CONFIG.backoff_max_retries,
+    "max_value": 128
 }  
