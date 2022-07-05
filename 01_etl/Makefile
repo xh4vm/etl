@@ -25,6 +25,10 @@ clean: clean-pyc clean-dockers
 .PHONY: run pre-commit all files
 pre-commit: create-venv pip-install-pre-commit pre-commit-files
 
+.PHONY: start postman/newman test API
+postman-test: 
+	docker run --net host -v `pwd`/etl/postman/ETLTests.json:/tmp/ETLTests.json -t postman/newman_alpine33 run /tmp/ETLTests.json
+
 .PHONY: create venv
 create-venv:
 	python3 -m venv venv

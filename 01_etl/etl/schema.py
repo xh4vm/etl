@@ -1,9 +1,9 @@
+import enum
+import uuid
 from datetime import date, datetime
 from typing import Optional
-import uuid
-import enum
-from pydantic import BaseModel
 
+from pydantic import BaseModel
 
 SCHEMA = 'content'
 
@@ -28,71 +28,71 @@ class Schema:
 
 
 class UUIDModelMixin(BaseModel):
-    id : uuid.UUID
+    id: uuid.UUID
 
 
 class TimeStampedModelMixin(BaseModel):
-    created_at : Optional[datetime] = None
-    updated_at : Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
 
 class GenreModel(UUIDModelMixin, TimeStampedModelMixin):
-    name : str
-    description : str
+    name: str
+    description: str
 
     class Meta:
         model = f'{SCHEMA}.{Schema.genre}'
 
 
 class FilmWorkModel(UUIDModelMixin, TimeStampedModelMixin):
-    title : str
-    description : Optional[str] = None
-    creation_date : Optional[date] = None
-    file_path : Optional[str] = None
-    rating : Optional[float] = None
-    type : FilmWorkTypeEnum = FilmWorkTypeEnum.MOVIE
+    title: str
+    description: Optional[str] = None
+    creation_date: Optional[date] = None
+    file_path: Optional[str] = None
+    rating: Optional[float] = None
+    type: FilmWorkTypeEnum = FilmWorkTypeEnum.MOVIE
 
     class Meta:
         model = f'{SCHEMA}.{Schema.film_work}'
 
 
 class GenreFilmWorkModel(UUIDModelMixin):
-    film_work : FilmWorkModel
-    genre : GenreModel
-    created_at : Optional[datetime] = None
+    film_work: FilmWorkModel
+    genre: GenreModel
+    created_at: Optional[datetime] = None
 
     class Meta:
         model = f'{SCHEMA}.{Schema.genre_film_work}'
 
 
 class PersonModel(UUIDModelMixin, TimeStampedModelMixin):
-    full_name : str
+    full_name: str
 
     class Meta:
         model = f'{SCHEMA}.{Schema.person}'
 
 
 class PersonModelIntoES(UUIDModelMixin):
-    name : str
+    name: str
 
 
 class PersonFilmWorkModel(UUIDModelMixin, TimeStampedModelMixin):
-    film_work : FilmWorkModel
-    person : PersonModel
-    role : PersonFilmWorkRoleEnum
-    created_at : Optional[datetime] = None
+    film_work: FilmWorkModel
+    person: PersonModel
+    role: PersonFilmWorkRoleEnum
+    created_at: Optional[datetime] = None
 
     class Meta:
         model = f'{SCHEMA}.{Schema.person_film_work}'
 
 
 class FilmWorkModelIntoES(UUIDModelMixin):
-    title : str
-    description : Optional[str] = None
-    imdb_rating : Optional[float] = None
-    genre : list[str] = []
-    director : Optional[str] = None
-    actors_names : list[str] = []
-    writers_names : list[str] = [] 
-    actors : list[PersonModelIntoES] = []
-    writers : list[PersonModelIntoES] = []
+    title: str
+    description: Optional[str] = None
+    imdb_rating: Optional[float] = None
+    genre: list[str] = []
+    director: Optional[str] = None
+    actors_names: list[str] = []
+    writers_names: list[str] = []
+    actors: list[PersonModelIntoES] = []
+    writers: list[PersonModelIntoES] = []

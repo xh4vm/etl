@@ -34,5 +34,3 @@ repos:
         args: ["-r", "app/"]
         entry: bandit
         
-
-        

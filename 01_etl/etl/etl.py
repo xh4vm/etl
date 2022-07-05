@@ -1,19 +1,17 @@
 import logging
 
-from config import POSTGRES_DSN, ELASTIC_CONFIG, REDIS_CONFIG, ES_INDEX
-from state import RedisState
+from config import ELASTIC_CONFIG, ES_INDEX, POSTGRES_DSN, REDIS_CONFIG
 from extractor import PostgreSQLExtractor
-from transformer import Transformer
 from loader import ElasticsearchLoader
-
-
+from state import RedisState
+from transformer import Transformer
 
 if __name__ == '__main__':
     logging.root.setLevel(logging.NOTSET)
     logging.basicConfig(level=logging.NOTSET)
 
     logger = logging.getLogger(__name__)
-    logger.info("Starting ETL process...")
+    logger.info('Starting ETL process...')
 
     etl_state = RedisState(settings=REDIS_CONFIG)
 
