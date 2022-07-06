@@ -15,7 +15,7 @@ services:
       - etube
 
   db:
-    image: postgres:13
+    image: postgres:13-alpine
     container_name: db
     env_file: .env
     environment:

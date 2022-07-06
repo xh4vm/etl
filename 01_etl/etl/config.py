@@ -42,3 +42,12 @@ ELASTIC_CONFIG = ElasticsearchSettings()
 ES_INDEX = ESIndex()
 
 BACKOFF_CONFIG = {'wait_gen': backoff.expo, 'exception': Exception, 'max_value': 128}
+
+
+class CelerySettings(Settings):
+    name = 'ETL'
+    broker = f'redis://{REDIS_CONFIG.host}:{REDIS_CONFIG.port}/0'
+    backend = f'redis://{REDIS_CONFIG.host}:{REDIS_CONFIG.port}/0'
+
+
+CELERY_CONFIG = CelerySettings()
