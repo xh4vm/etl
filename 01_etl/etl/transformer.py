@@ -5,11 +5,11 @@ from schema import FilmWorkModelIntoES
 
 class Transformer:
     def _get_short_persons(self, persons: Optional[list[dict[str, Any]]]) -> Union[Iterator[str], tuple]:
-        '''Метод разворачивания словарей с персонами в массив имен'''
+        """Метод разворачивания словарей с персонами в массив имен"""
         return (person['name'] for person in persons) if persons is not None else ()
 
     def transform(self, raw_data: Iterator[tuple[Any]]) -> Iterator[FilmWorkModelIntoES]:
-        '''Метод для преобразования сырых данных из бд в модель'''
+        """Метод для преобразования сырых данных из бд в модель"""
 
         for row in raw_data:
             directors_names = self._get_short_persons(row['directors'])

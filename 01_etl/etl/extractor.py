@@ -12,7 +12,7 @@ from state import BaseState
 
 
 class PostgreSQLExtractor:
-    '''Класс для извлечения сырых данных из постгрес'''
+    """Класс для извлечения сырых данных из постгрес"""
 
     logger = logging.getLogger(__name__)
 
@@ -26,8 +26,8 @@ class PostgreSQLExtractor:
 
     @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
     def _reconnection(self) -> connection:
-        '''Метод подключения/переподключения к бд'''
-        
+        """Метод подключения/переподключения к бд"""
+
         if self._pg_conn is not None:
             self._pg_conn.close()
 
@@ -42,9 +42,9 @@ class PostgreSQLExtractor:
 
     @backoff.on_exception(**BACKOFF_CONFIG, logger=logger)
     def get_raw_data(self) -> Iterator[tuple[Any]]:
-        '''Метод получения сырых данных из бд.
-        В результате возвращаю генератор, которых позволяет брать 
-        данные из бд сразу пачкой по chunk_size штук'''
+        """Метод получения сырых данных из бд.
+        В результате возвращаю генератор, которых позволяет брать
+        данные из бд сразу пачкой по chunk_size штук"""
 
         down_limit = self._state.get(f'down_limit_{Schema.film_work}', default_value=str(datetime.min))
         self.logger.debug(r'state setted in ' + down_limit)

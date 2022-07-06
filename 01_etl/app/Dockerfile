@@ -1,8 +1,9 @@
 FROM python:3.10-slim AS build
 
+WORKDIR /opt
 COPY requirements.txt ./
 
-RUN apt-get update && apt-get install -y curl build-essential python-dev \
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential python-dev \
      && pip install --upgrade pip \
      && pip install -r requirements.txt
 

@@ -10,7 +10,7 @@ from state import BaseState
 
 
 def es_conn_is_alive(es_conn: Elasticsearch) -> bool:
-    '''Функция для проверки работоспособности Elasticsearch'''
+    """Функция для проверки работоспособности Elasticsearch"""
     try:
         return es_conn.ping()
     except Exception:

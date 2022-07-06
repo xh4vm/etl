@@ -1,8 +1,9 @@
 FROM python:3.10-slim AS build 
 
+WORKDIR /opt
 COPY requirements.txt .
 
-RUN apt-get update && apt-get install -y curl && pip install -r requirements.txt 
+RUN apt-get update && apt-get install -y --no-install-recommends curl && pip install -r requirements.txt 
 
 
 FROM python:3.10-slim

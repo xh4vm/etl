@@ -1,18 +1,14 @@
-from celery import Celery
 import logging
 
-from config import ELASTIC_CONFIG, ES_INDEX, POSTGRES_DSN, REDIS_CONFIG, CELERY_CONFIG
+from celery import Celery
+from config import (CELERY_CONFIG, ELASTIC_CONFIG, ES_INDEX, POSTGRES_DSN,
+                    REDIS_CONFIG)
 from extractor import PostgreSQLExtractor
 from loader import ElasticsearchLoader
 from state import RedisState
 from transformer import Transformer
 
-
-celery = Celery(
-    CELERY_CONFIG.name, 
-    backend=CELERY_CONFIG.backend,
-    broker=CELERY_CONFIG.broker
-)
+celery = Celery(CELERY_CONFIG.name, backend=CELERY_CONFIG.backend, broker=CELERY_CONFIG.broker)
 
 
 @celery.task
