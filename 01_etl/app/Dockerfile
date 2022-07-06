@@ -7,7 +7,7 @@ RUN apt-get update && apt-get install -y curl build-essential python-dev \
      && pip install -r requirements.txt
 
 
-FROM build
+FROM python:3.10-slim
 
 WORKDIR /opt/app
 EXPOSE 8000
