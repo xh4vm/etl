@@ -10,12 +10,12 @@ services:
       - ./app:/opt/app
       - ./static:/var/www/static:ro
     ports:
-      - 8000:8000
+      - ${APP_PORT}:8000
     networks:
       - etube
 
   db:
-    image: postgres:13
+    image: postgres:13-alpine
     container_name: db
     env_file: .env
     environment:
@@ -67,13 +67,12 @@ services:
       - etube
     volumes:
       - etube-elasticsearch-data:/usr/share/elasticsearch/data:rw
-      - ./elasticsearch/:/usr/share/elasticsearch/mapping/:rw
     healthcheck:
       test: curl http://elasticsearch:9200 >/dev/null; if [[ $$? == 52 ]]; then echo 0; else echo 1; fi
       interval: 30s
       timeout: 10s
       retries: 5
-    
+
   etl:
     build: ./etl
     restart: unless-stopped
@@ -86,8 +85,7 @@ services:
         condition: service_healthy
     networks:
       - etube
-    env_file:
-      - ./etl/.env
+    env_file: .env    
 
 networks:
   etube:

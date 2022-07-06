@@ -1,13 +1,20 @@
-FROM python:3.10
+FROM python:3.10-slim AS build
+
+WORKDIR /opt
+COPY requirements.txt ./
+
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential python-dev \
+     && pip install --upgrade pip \
+     && pip install -r requirements.txt
+
+
+FROM python:3.10-slim
 
 WORKDIR /opt/app
 EXPOSE 8000
 ENTRYPOINT ["uwsgi", "--strict", "--ini", "uwsgi.ini"]
 
-COPY requirements.txt uwsgi.ini ./
-
-RUN  mkdir -p /var/www/static/ \
-     && pip install --upgrade pip \
-     && pip install -r requirements.txt
+COPY --from=build /usr/local /usr/local
+RUN  mkdir -p /var/www/static/
 
 COPY . .

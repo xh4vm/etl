@@ -1,8 +1,9 @@
 from django.contrib import admin
+from django.db.models import F, Prefetch
 from django.utils.translation import gettext_lazy as _
-from django.db.models import Prefetch, F
 
-from .models import FilmWork, Genre, GenreFilmWork, Person, PersonFilmWork, PersonFilmWorkRole
+from .models import (FilmWork, Genre, GenreFilmWork, Person, PersonFilmWork,
+                     PersonFilmWorkRole)
 
 
 @admin.register(Genre)
